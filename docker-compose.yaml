@@ -1,0 +1,27 @@
+version: "3.8"
+services:
+  db:
+    build: ./postgis
+    environment:
+      POSTGRES_DB: visionzero
+      POSTGRES_USER: vz
+      POSTGRES_PASSWORD: vz
+      POSTGRES_HOST_AUTH_METHOD: trust
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+  python:
+    build: ./python
+    volumes:
+      - ./python:/application
+    depends_on:
+      - db
+  adminer:
+    build: ./adminer
+    ports:
+      - 8080:8080
+    depends_on:
+      - db
+volumes:
+  db_data:
