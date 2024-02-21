@@ -11,6 +11,7 @@ docker compose up -d postgis
 - connect on localhost on 5432
 - username: `vz`
 - password: `vz`
+- database: `visionzero`
 - it trusts all connections, so the password is optional-ish
 
 ## Adminer (DB UI)
