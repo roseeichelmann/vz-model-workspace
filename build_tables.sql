@@ -197,8 +197,18 @@ CREATE OR REPLACE FUNCTION public.update_crash_location_id()
     END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE TRIGGER update_crash_location_id
-    BEFORE INSERT OR UPDATE ON public.crashes FOR EACH ROW EXECUTE FUNCTION public.update_crash_location_id();
+CREATE OR REPLACE TRIGGER update_crash_location_id_on_insert
+BEFORE INSERT ON public.crashes
+FOR EACH ROW
+WHEN (NEW.latitude IS NOT NULL AND NEW.longitude IS NOT NULL)
+EXECUTE FUNCTION public.update_crash_location_id();
+
+CREATE OR REPLACE TRIGGER update_crash_location_id_on_update
+BEFORE UPDATE ON public.crashes
+FOR EACH ROW
+WHEN (OLD.latitude IS DISTINCT FROM NEW.latitude
+OR OLD.longitude IS DISTINCT FROM NEW.longitude)
+FUNCTION public.update_crash_location_id();
 
 -- Trigger for vz_unique_unit_types
 
