@@ -32,14 +32,41 @@ SELECT * FROM public.cris_units WHERE unit_id = 2;
 SELECT * FROM public.units WHERE unit_id = 2;
 
 SELECT * FROM public.cris_crashes WHERE crash_id = 2;
-SELECT * FROM public.cris_crashes WHERE crash_id = 2;
+SELECT * FROM public.crashes WHERE crash_id = 2;
 
 -- Query for a single crash by ID
 
+SELECT * FROM public.crashes WHERE crash_id = 100;
+
 -- Query for a large number of crashes
+
+SELECT TOP 100 * FROM public.crashes;
 
 -- Create a query/view that powers a simplified version of the locations table, for example by calculating total number of units per location (for reference see: locations_with_crash_injury_counts in the DB)
 
+CREATE OR REPLACE VIEW public.locations_with_crash_unit_counts AS
+WITH crashes AS (
+  SELECT crashes.vz_location_id,
+      count(DISTINCT crashes.crash_id) AS crash_count,
+      count(units.unit_id) AS unit_count
+      FROM crashes
+        LEFT JOIN units ON units.crash_id = crashes.crash_id
+    WHERE true AND crashes.vz_location_id IS NOT NULL
+    GROUP BY crashes.vz_location_id
+)
+  SELECT locations.description,
+  locations.location_id,
+  COALESCE(crashes.crash_count, 0) AS crash_count,
+  COALESCE(crashes.unit_count) AS unit_count
+   FROM locations
+     LEFT JOIN crashes ON locations.location_id::text = crashes.vz_location_id::text
+  WHERE locations.location_group = 1;
+
+SELECT * FROM public.locations_with_crash_unit_counts;
+
 -- Create a test case, or simply write out the steps that would be involved if we wanted to add a new editable column to crashes
 
+ALTER TABLE public.crashes ADD COLUMN vz_law_enforcement_num text;
+
 -- [Optional] Create a test case or simply describe the mechanism to support a conflict management system as described in the functional requirements.
+
