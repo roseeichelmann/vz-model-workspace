@@ -210,7 +210,5 @@ CREATE OR REPLACE FUNCTION public.update_unique_unit_types()
     END;
 $$ LANGUAGE plpgsql;
 
-
--- need to make sure this runs after the crash has already been created
 CREATE OR REPLACE TRIGGER update_unique_unit_types
     AFTER INSERT OR UPDATE ON public.units FOR EACH ROW EXECUTE FUNCTION public.update_unique_unit_types();
