@@ -208,7 +208,7 @@ BEFORE UPDATE ON public.crashes
 FOR EACH ROW
 WHEN (OLD.latitude IS DISTINCT FROM NEW.latitude
 OR OLD.longitude IS DISTINCT FROM NEW.longitude)
-FUNCTION public.update_crash_location_id();
+EXECUTE FUNCTION public.update_crash_location_id();
 
 -- Trigger for vz_unique_unit_types
 
