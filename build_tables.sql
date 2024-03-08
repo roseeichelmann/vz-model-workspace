@@ -49,11 +49,15 @@ CREATE TABLE public.cris_units (
     unit_type_id integer REFERENCES public.unit_type_lkp ON DELETE RESTRICT ON UPDATE RESTRICT
 );
 
+create index on public.cris_units (crash_id);
+
 CREATE TABLE public.units (
     unit_id SERIAL PRIMARY KEY,
     crash_id integer NOT NULL REFERENCES public.crashes ON DELETE CASCADE ON UPDATE CASCADE,
     unit_type_id integer REFERENCES public.unit_type_lkp ON DELETE RESTRICT ON UPDATE RESTRICT
 );
+
+create index on public.units (crash_id);
 
 -- LOCATIONS
 CREATE TABLE public.locations (
