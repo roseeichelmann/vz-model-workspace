@@ -132,7 +132,7 @@ CALL cris_update_unit(2, 1);
 
 6. VZ user adds a custom lookup value and uses it. VZ custom lookup values will start at something like 11111 so we can be sure they will never overlap with cris lkp values.
 
-   - Another idea is to have a vz_custom column that is a boolean in the lookup table. The pkey for the table is the combo of lkp_id and vz_custom. So custom vz values could also start at 1 but would have true for the vz_custom column and thats how they are differentiated.
+   - _Another idea is to have a vz_custom column that is a boolean in the lookup table. The pkey for the table is the combo of lkp_id and vz_custom. So custom vz values could also start at 1 but would have true for the vz_custom column and thats how they are differentiated. This method is not demonstrated._
 
 ```sql
 create or replace procedure vz_custom_lkp (u_id integer, unit_type integer, type_desc text) language plpgsql as
