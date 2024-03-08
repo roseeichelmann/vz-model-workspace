@@ -6,20 +6,64 @@ INSERT INTO public.cris_units(crash_id, unit_type_id) values (2000000, 5);
 
 -- VZ user changes a crash’s Location ID by updating the crash lat/lon
 
-UPDATE public.crashes SET latitude = 30.19850686, longitude = -97.76400348 WHERE crash_id = 1;
-UPDATE public.crashes SET latitude = 30.31860473, longitude = -97.62621625 WHERE crash_id = 1;
+create or replace procedure vz_update_latlon (id integer, lat double precision, long double precision) language plpgsql as 
+$$
+declare old_location text;
+declare new_location text;
+begin 
+    raise notice 'VZ user updating lat/long of crash_id %', id;
+    SELECT INTO old_location vz_location_id FROM public.crashes WHERE crash_id = id;
+    UPDATE public.crashes SET latitude = lat, longitude = long WHERE crash_id = id;
+    SELECT INTO new_location vz_location_id FROM public.crashes WHERE crash_id = id;
+    raise notice 'Location updated from % to %', old_location, new_location;
+end;
+$$;
+
+CALL vz_update_latlon(1, 30.434043190707328, -97.70021501519273);
+CALL vz_update_latlon(1, 30.31860473, -97.62621625);
 
 -- VZ user edits a unit type
 
 UPDATE public.units SET unit_type_id = 6 WHERE unit_id = 1;
 
+create or replace procedure vz_update_unit_type (id integer, unit_type integer) language plpgsql as 
+$$
+declare old_unit_type text;
+declare new_unit_type text;
+begin 
+    raise notice 'VZ user updating unit type of unit id %', id;
+    SELECT INTO old_unit_type unit_type_id FROM public.units WHERE unit_id = id;
+    UPDATE public.units SET unit_type_id = unit_type WHERE unit_id = id;
+    SELECT INTO new_unit_type unit_type_id FROM public.units WHERE unit_id = id;
+    raise notice 'Unit type updated from % to %', old_unit_type, new_unit_type;
+end;
+$$;
+
+CALL vz_update_unit_type(1, 6);
+
 -- CRIS user updates the crash lat/lon, and road type
 
-UPDATE public.cris_crashes SET latitude = 30.47371683, longitude = -97.6891157, road_type_id = 4 WHERE crash_id = 2;
+create or replace procedure cris_update_latlon (id integer, lat double precision, long double precision, road_type integer) language plpgsql as 
+$$
+begin 
+    raise notice 'CRIS user updating lat/long of crash_id % to %,% and road type to %', id, lat, long, road_type;
+    UPDATE public.cris_crashes SET latitude = lat, longitude = long, road_type_id = road_type WHERE crash_id = 2;
+end;
+$$;
+
+CALL cris_update_latlon(2, 30.47371683, -97.6891157, 4);
 
 -- CRIS user updates a unit type
 
-UPDATE public.cris_units set unit_type_id = 1 WHERE unit_id = 2;
+create or replace procedure cris_update_unit (id integer, unit_type integer) language plpgsql as 
+$$
+begin 
+    raise notice 'CRIS user updating unit type of unit_id % to %', id, unit_type;
+    UPDATE public.cris_units set unit_type_id = unit_type WHERE unit_id = id;
+end;
+$$;
+
+CALL cris_update_unit(2, 1);
 
 -- VZ user adds a custom lookup value and uses it
 
