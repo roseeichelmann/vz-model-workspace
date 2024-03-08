@@ -115,6 +115,8 @@ CREATE TABLE public.locations (
     location_group smallint DEFAULT 0
 );
 
+CREATE INDEX locations_geometry_index ON public.locations USING gist (geometry);
+
 -- TRIGGERS
 
 -- Trigger on insert to cris table
