@@ -24,8 +24,6 @@ CALL vz_update_latlon(1, 30.31860473, -97.62621625);
 
 -- 3. VZ user edits a unit type
 
-UPDATE public.units SET unit_type_id = 6 WHERE unit_id = 1;
-
 create or replace procedure vz_update_unit_type (id integer, unit_type integer) language plpgsql as 
 $$
 declare old_unit_type text;
@@ -65,26 +63,52 @@ $$;
 
 CALL cris_update_unit(2, 1);
 
--- 6. VZ user adds a custom lookup value and uses it
+-- 6. VZ user adds a custom lookup value and uses it. VZ custom lookup values will start at something like 11111 so
+-- we can be sure they will never overlap with cris lkp values.
 
-INSERT INTO public.unit_type_lkp(id, description) values (11111, 'scooter');
-UPDATE public.units set unit_type_id = 11111 WHERE unit_id = 2;
+-- Another idea is to have a vz_custom column that is a boolean in the lookup table. The pkey for the table
+-- is the combo of lkp_id and vz_custom. So custom vz values could also start at 1 but would have true for
+-- the vz_custom column and thats how they are differentiated.
+
+create or replace procedure vz_custom_lkp (u_id integer, unit_type integer, type_desc text) language plpgsql as 
+$$
+declare old_unit_type_id integer;
+declare old_unit_type_desc text;
+begin 
+    SELECT INTO old_unit_type_id unit_type_id from public.units WHERE unit_id = u_id;
+    SELECT INTO old_unit_type_desc description from public.unit_type_lkp WHERE id = old_unit_type_id;
+    raise notice 'VZ user adding new unit type % with id % to unit_type_lkp table', type_desc, unit_type;
+    INSERT INTO public.unit_type_lkp(id, description) values (unit_type, type_desc);
+    UPDATE public.units set unit_type_id = unit_type WHERE unit_id = u_id;
+    raise notice 'VZ user updated unit type of unit id % from % to %', u_id, old_unit_type_desc, type_desc;
+end;
+$$;
+
+CALL vz_custom_lkp(2, 11111, 'scooter');
 
 -- 7. Create a query that demonstrates the correct source of truth when crashes and units have edits from both CRIS and the VZ user
 
+--  CRIS user edited this record in step 5
 SELECT * FROM public.cris_units WHERE unit_id = 2;
+-- VZ user edited this record in step 6
 SELECT * FROM public.units WHERE unit_id = 2;
 
-SELECT * FROM public.cris_crashes WHERE crash_id = 2;
-SELECT * FROM public.crashes WHERE crash_id = 2;
+-- CRIS user did not edit this record
+SELECT * FROM public.cris_crashes WHERE crash_id = 1;
+-- VZ user did edit this record in step 2
+SELECT * FROM public.crashes WHERE crash_id = 1;
+
+-- Neither CRIS nor VZ edited these records, they should have the same lat/long and road type
+SELECT * FROM public.cris_crashes WHERE crash_id = 50;
+SELECT * FROM public.crashes WHERE crash_id = 50;
 
 -- 8. Query for a single crash by ID
 
-SELECT * FROM public.crashes WHERE crash_id = 100;
+SELECT * FROM public.crashes ORDER BY RANDOM() LIMIT 1;
 
--- 9. Query for a large number of crashes
+-- 9. Query for a large number of crashes. You can edit this number to increase/decrease it.
 
-SELECT * FROM public.crashes LIMIT 100;
+SELECT * FROM public.crashes LIMIT 1000;
 
 -- 10. Create a query/view that powers a simplified version of the locations table, for example by calculating total number of units per location (for reference see: locations_with_crash_injury_counts in the DB)
 
@@ -106,12 +130,18 @@ WITH crashes AS (
      LEFT JOIN crashes ON locations.location_id::text = crashes.vz_location_id::text
   WHERE locations.location_group = 1;
 
-SELECT * FROM public.locations_with_crash_unit_counts;
+SELECT *
+FROM "locations_with_crash_unit_counts"
+ORDER BY "crash_count" DESC
+LIMIT 100
 
 -- 11. Create a test case, or simply write out the steps that would be involved if we wanted to add a new editable column to crashes
 
+-- We would prefix the column with vz_ and add it only to the public.crashes table
 ALTER TABLE public.crashes ADD COLUMN vz_law_enforcement_num integer;
-UPDATE TABLE public.crashes SET vz_law_enforcement_num = 1 WHERE crash_id = 1;
+UPDATE public.crashes SET vz_law_enforcement_num = 1 WHERE crash_id = 1;
+SELECT * FROM public.crashes WHERE crash_id = 1;
 
 -- 12. [Optional] Create a test case or simply describe the mechanism to support a conflict management system as described in the functional requirements.
 
+![Diagram of potential conflict resolution system.](conflict_res.png)
