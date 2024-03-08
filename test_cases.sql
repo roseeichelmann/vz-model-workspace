@@ -66,7 +66,9 @@ SELECT * FROM public.locations_with_crash_unit_counts;
 
 -- Create a test case, or simply write out the steps that would be involved if we wanted to add a new editable column to crashes
 
-ALTER TABLE public.crashes ADD COLUMN vz_law_enforcement_num text;
+ALTER TABLE public.crashes ADD COLUMN vz_law_enforcement_num integer;
+UPDATE TABLE public.crashes SET vz_law_enforcement_num = 1 WHERE crash_id = 1;
+
 
 -- [Optional] Create a test case or simply describe the mechanism to support a conflict management system as described in the functional requirements.
 
