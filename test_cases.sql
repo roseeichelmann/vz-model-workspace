@@ -1,10 +1,10 @@
--- CRIS user creates a crash record with two unit records
+-- 1. CRIS user creates a crash record with two unit records
 
 INSERT INTO public.cris_crashes(crash_id, latitude, longitude, primary_address, road_type_id) values (2000000, 30.48501694, -97.72865645, '1234 hello world ave', 3);
 INSERT INTO public.cris_units(crash_id, unit_type_id) values (2000000, 3);
 INSERT INTO public.cris_units(crash_id, unit_type_id) values (2000000, 5);
 
--- VZ user changes a crash’s Location ID by updating the crash lat/lon
+-- 2. VZ user changes a crash’s Location ID by updating the crash lat/lon
 
 create or replace procedure vz_update_latlon (id integer, lat double precision, long double precision) language plpgsql as 
 $$
@@ -22,7 +22,7 @@ $$;
 CALL vz_update_latlon(1, 30.434043190707328, -97.70021501519273);
 CALL vz_update_latlon(1, 30.31860473, -97.62621625);
 
--- VZ user edits a unit type
+-- 3. VZ user edits a unit type
 
 UPDATE public.units SET unit_type_id = 6 WHERE unit_id = 1;
 
@@ -41,7 +41,7 @@ $$;
 
 CALL vz_update_unit_type(1, 6);
 
--- CRIS user updates the crash lat/lon, and road type
+-- 4. CRIS user updates the crash lat/lon, and road type
 
 create or replace procedure cris_update_latlon (id integer, lat double precision, long double precision, road_type integer) language plpgsql as 
 $$
@@ -53,7 +53,7 @@ $$;
 
 CALL cris_update_latlon(2, 30.47371683, -97.6891157, 4);
 
--- CRIS user updates a unit type
+-- 5. CRIS user updates a unit type
 
 create or replace procedure cris_update_unit (id integer, unit_type integer) language plpgsql as 
 $$
@@ -65,12 +65,12 @@ $$;
 
 CALL cris_update_unit(2, 1);
 
--- VZ user adds a custom lookup value and uses it
+-- 6. VZ user adds a custom lookup value and uses it
 
 INSERT INTO public.unit_type_lkp(id, description) values (11111, 'scooter');
 UPDATE public.units set unit_type_id = 11111 WHERE unit_id = 2;
 
--- Create a query that demonstrates the correct source of truth when crashes and units have edits from both CRIS and the VZ user
+-- 7. Create a query that demonstrates the correct source of truth when crashes and units have edits from both CRIS and the VZ user
 
 SELECT * FROM public.cris_units WHERE unit_id = 2;
 SELECT * FROM public.units WHERE unit_id = 2;
@@ -78,15 +78,15 @@ SELECT * FROM public.units WHERE unit_id = 2;
 SELECT * FROM public.cris_crashes WHERE crash_id = 2;
 SELECT * FROM public.crashes WHERE crash_id = 2;
 
--- Query for a single crash by ID
+-- 8. Query for a single crash by ID
 
 SELECT * FROM public.crashes WHERE crash_id = 100;
 
--- Query for a large number of crashes
+-- 9. Query for a large number of crashes
 
 SELECT * FROM public.crashes LIMIT 100;
 
--- Create a query/view that powers a simplified version of the locations table, for example by calculating total number of units per location (for reference see: locations_with_crash_injury_counts in the DB)
+-- 10. Create a query/view that powers a simplified version of the locations table, for example by calculating total number of units per location (for reference see: locations_with_crash_injury_counts in the DB)
 
 CREATE OR REPLACE VIEW public.locations_with_crash_unit_counts AS
 WITH crashes AS (
@@ -108,11 +108,10 @@ WITH crashes AS (
 
 SELECT * FROM public.locations_with_crash_unit_counts;
 
--- Create a test case, or simply write out the steps that would be involved if we wanted to add a new editable column to crashes
+-- 11. Create a test case, or simply write out the steps that would be involved if we wanted to add a new editable column to crashes
 
 ALTER TABLE public.crashes ADD COLUMN vz_law_enforcement_num integer;
 UPDATE TABLE public.crashes SET vz_law_enforcement_num = 1 WHERE crash_id = 1;
 
-
--- [Optional] Create a test case or simply describe the mechanism to support a conflict management system as described in the functional requirements.
+-- 12. [Optional] Create a test case or simply describe the mechanism to support a conflict management system as described in the functional requirements.
 
