@@ -40,7 +40,7 @@ SELECT * FROM public.crashes WHERE crash_id = 100;
 
 -- Query for a large number of crashes
 
-SELECT TOP 100 * FROM public.crashes;
+SELECT * FROM public.crashes LIMIT 100;
 
 -- Create a query/view that powers a simplified version of the locations table, for example by calculating total number of units per location (for reference see: locations_with_crash_injury_counts in the DB)
 
