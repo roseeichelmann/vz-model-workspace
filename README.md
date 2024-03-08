@@ -211,7 +211,7 @@ LIMIT 100
 
 11. Create a test case, or simply write out the steps that would be involved if we wanted to add a new editable column to crashes
 
-We would prefix the column with vz\_ and add it only to the public.crashes table
+We would prefix the column with `vz_` and add it only to the `public.crashes` table
 
 ```sql
 ALTER TABLE public.crashes ADD COLUMN vz_law_enforcement_num integer;
