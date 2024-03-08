@@ -44,18 +44,15 @@ CREATE TABLE public.crashes (
 
 -- UNITS
 CREATE TABLE public.cris_units (
-    unit_id SERIAL,
+    unit_id SERIAL PRIMARY KEY,
     crash_id integer NOT NULL REFERENCES public.cris_crashes ON DELETE CASCADE ON UPDATE CASCADE,
-    unit_type_id integer REFERENCES public.unit_type_lkp ON DELETE RESTRICT ON UPDATE RESTRICT,
-    PRIMARY KEY(crash_id, unit_id)
+    unit_type_id integer REFERENCES public.unit_type_lkp ON DELETE RESTRICT ON UPDATE RESTRICT
 );
 
 CREATE TABLE public.units (
-    unit_id SERIAL,
+    unit_id SERIAL PRIMARY KEY,
     crash_id integer NOT NULL REFERENCES public.crashes ON DELETE CASCADE ON UPDATE CASCADE,
-    unit_type_id integer REFERENCES public.unit_type_lkp ON DELETE RESTRICT ON UPDATE RESTRICT,
-    PRIMARY KEY(crash_id, unit_id)
-
+    unit_type_id integer REFERENCES public.unit_type_lkp ON DELETE RESTRICT ON UPDATE RESTRICT
 );
 
 -- LOCATIONS
@@ -184,24 +181,22 @@ CREATE OR REPLACE TRIGGER copy_unit_on_cris_insert
 -- This trigger function updates the location_id of a record in atd_txdot_crashes on insert or update.
 CREATE OR REPLACE FUNCTION public.update_crash_location_id()
     RETURNS TRIGGER AS $$
-    DECLARE crash_position geometry;
     BEGIN
-        crash_position := ST_SetSRID(ST_MakePoint(NEW.longitude, NEW.latitude), 4326);
         -- Return the location id of the crash by finding which location polygon the crash
         -- geographic position resides in
         NEW.vz_location_id = (
             SELECT location_id 
             FROM locations 
-            WHERE (geometry && crash_position)
-            AND ST_Contains(geometry, crash_position)
+            WHERE (geometry && ST_SetSRID(ST_MakePoint(NEW.longitude, NEW.latitude), 4326))
+            AND ST_Contains(geometry, ST_SetSRID(ST_MakePoint(NEW.longitude, NEW.latitude), 4326))
             LIMIT 1 --TODO: This should be temporary until we get our polygons in order
         );
         RETURN NEW;
     END;
 $$ LANGUAGE plpgsql;
 
--- CREATE OR REPLACE TRIGGER update_crash_location_id
---     AFTER INSERT OR UPDATE ON public.crashes FOR EACH ROW EXECUTE FUNCTION public.update_crash_location_id();
+CREATE OR REPLACE TRIGGER update_crash_location_id
+    BEFORE INSERT OR UPDATE ON public.crashes FOR EACH ROW EXECUTE FUNCTION public.update_crash_location_id();
 
 -- Trigger for vz_unique_unit_types
 
