@@ -173,7 +173,7 @@ SELECT * FROM public.crashes WHERE crash_id = 50;
 8. Query for a single crash by ID
 
 ```sql
-SELECT * FROM public.crashes ORDER BY RANDOM() LIMIT 1;
+SELECT * FROM public.crashes WHERE crash_id = 5;
 ```
 
 9. Query for a large number of crashes. You can edit this number to increase/decrease it.
