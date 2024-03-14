@@ -125,7 +125,6 @@ CREATE INDEX locations_geometry_index ON public.locations USING gist (geometry);
 
 -- Trigger on insert to cris table
 
--- order of these triggers will depend on how cris data is inserted into the db - are crashes first or units?
 CREATE OR REPLACE FUNCTION public.copy_crash_on_cris_insert()
     RETURNS TRIGGER
     LANGUAGE plpgsql
@@ -181,6 +180,66 @@ CREATE OR REPLACE TRIGGER copy_crash_on_cris_insert
 
 CREATE OR REPLACE TRIGGER copy_unit_on_cris_insert
     AFTER INSERT ON public.cris_units FOR EACH ROW EXECUTE FUNCTION public.copy_unit_on_cris_insert();
+
+-- Triggers on CRIS update
+
+CREATE OR REPLACE FUNCTION public.on_cris_crashes_update()
+    RETURNS TRIGGER
+    LANGUAGE plpgsql
+AS
+$function$
+declare
+    new_jb jsonb := to_jsonb(NEW); 
+    old_jb jsonb := to_jsonb(OLD); 
+    vz_table_jb jsonb;
+    running_column text;
+begin
+    SELECT row_to_json(crashes) INTO vz_table_jb FROM crashes WHERE crash_id = NEW.crash_id; 
+    for running_column in select jsonb_object_keys(new_jb) loop
+        if (new_jb -> running_column <> old_jb -> running_column) then
+            if (old_jb -> running_column = vz_table_jb -> running_column) then
+                EXECUTE format('UPDATE public.crashes SET %I = $1.%I WHERE crash_id = $1.crash_id;', running_column, running_column) USING  NEW;
+            end if;
+        end if;
+    end loop;
+    return NEW;
+end;
+$function$
+;
+
+CREATE OR REPLACE TRIGGER on_cris_crashes_update
+    BEFORE UPDATE ON cris_crashes
+    FOR EACH ROW
+    EXECUTE FUNCTION public.on_cris_crashes_update();
+
+CREATE OR REPLACE FUNCTION public.on_cris_units_update()
+    RETURNS TRIGGER
+    LANGUAGE plpgsql
+AS
+$function$
+declare
+    new_jb jsonb := to_jsonb(NEW); 
+    old_jb jsonb := to_jsonb(OLD); 
+    vz_table_jb jsonb;
+    running_column text;
+begin
+    SELECT row_to_json(units) INTO vz_table_jb FROM units WHERE unit_id = NEW.unit_id; 
+    for running_column in select jsonb_object_keys(new_jb) loop
+        if (new_jb -> running_column <> old_jb -> running_column) then
+            if (old_jb -> running_column = vz_table_jb -> running_column) then
+                EXECUTE format('UPDATE public.units SET %I = $1.%I WHERE unit_id = $1.unit_id;', running_column, running_column) USING  NEW;
+            end if;
+        end if;
+    end loop;
+    return NEW;
+end;
+$function$
+;
+
+CREATE OR REPLACE TRIGGER on_cris_units_update
+    BEFORE UPDATE ON cris_units
+    FOR EACH ROW
+    EXECUTE FUNCTION public.on_cris_units_update();
 
 -- Trigger for location_id
 
