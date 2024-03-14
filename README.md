@@ -221,4 +221,38 @@ SELECT * FROM public.crashes WHERE crash_id = 1;
 
 12. [Optional] Create a test case or simply describe the mechanism to support a conflict management system as described in the functional requirements.
 
+Here are some commands to just test the functionality of CRIS updating a value that doesn't yet have any VZ edits, and then updating a value that does have VZ edits.
+
+```sql
+-- Demonstrating that values in the crashes table without VZ edits should get updates from CRIS
+SELECT road_type_id, primary_address from public.cris_crashes WHERE crash_id = 20;
+SELECT road_type_id, primary_address from public.crashes WHERE crash_id = 20;
+UPDATE public.cris_crashes SET road_type_id = 1, primary_address = 'testing' WHERE crash_id = 20;
+SELECT road_type_id, primary_address from public.cris_crashes WHERE crash_id = 20;
+SELECT road_type_id, primary_address from public.crashes WHERE crash_id = 20;
+
+-- Demonstrating that values in the units table without VZ edits should get updates from CRIS
+SELECT unit_type_id from public.cris_units WHERE unit_id = 10;
+SELECT unit_type_id from public.units WHERE crash_id = 10;
+UPDATE public.cris_units SET unit_type_id = 1 WHERE unit_id = 10;
+SELECT unit_type_id from public.cris_units WHERE unit_id = 10;
+SELECT unit_type_id from public.units WHERE crash_id = 10;
+
+-- Here we are gonna have a VZ user update the road type of the crash
+UPDATE public.crashes SET road_type_id = 4 WHERE crash_id = 20;
+-- Then CRIS updates their record
+UPDATE public.cris_crashes SET road_type_id = 2 WHERE crash_id = 20;
+SELECT road_type_id from public.cris_crashes WHERE crash_id = 20;
+-- The CRIS update shouldn't have affected the crashes table and it should instead retain the VZ edit
+SELECT road_type_id from public.crashes WHERE crash_id = 20;
+
+-- Here we are gonna have a VZ user update the unit type of a unit
+UPDATE public.units SET unit_type_id = 3 WHERE unit_id = 10;
+-- Then CRIS updates their record
+UPDATE public.cris_units SET unit_type_id = 5 WHERE unit_id = 10;
+SELECT unit_type_id from public.cris_units WHERE unit_id = 10;
+-- The CRIS update shouldn't have affected the units table and it should instead retain the VZ edit
+SELECT unit_type_id from public.units WHERE unit_id = 10;
+```
+
 ![Diagram of potential conflict resolution system.](conflict_res.png)
